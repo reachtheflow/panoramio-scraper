@@ -8,8 +8,8 @@ mongoose.connect(conf['mongoose.connect']);
 var Scraper = require('./scraper.js');
 
 var scraper = new Scraper({
-  requestsConcurrency: 1,
-  downloadsConcurrency: 1,
+  requestsConcurrency: 2,
+  downloadsConcurrency: 4,
   nocolorthief: true,
   colorthiefConcurrency: 1
 });
