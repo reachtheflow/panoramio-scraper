@@ -123,6 +123,25 @@ module.exports.schemas.photo.methods.upsert = function () {
   return p.exec.apply(p, arguments);
 };
 
+module.exports.schemas.photo.methods.getDominantColor = function () {
+  if (this.dominantColor &&
+    typeof this.dominantColor.r === 'number' &&
+    typeof this.dominantColor.g === 'number' &&
+    typeof this.dominantColor.b === 'number') {
+    return this.dominantColor;
+  }
+  return null;
+};
+
+
+module.exports.schemas.photo.methods.setDominantColor = function (r, g, b) {
+  assert(typeof r === 'number');
+  assert(typeof g === 'number');
+  assert(typeof b === 'number');
+
+  this.dominantColor = { r: r, g: g, b: b };
+};
+
 //////////////// MODELS ///////////////
 module.exports.models = {};
 

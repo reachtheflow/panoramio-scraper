@@ -62,7 +62,7 @@ Request.prototype.send = function () {
     maxy: this.maxy + this.step
   }).then(function (photos) {
     that.panoramioPhotos = photos;
-    that.photos = photos.map(function (p) { return p.photoId; })
+    that.photos = photos.map(function (p) { return String(p.photoId); })
     that.sended = true;
     return that;
   });

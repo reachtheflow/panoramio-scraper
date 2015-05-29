@@ -51,18 +51,22 @@ var Scraper = function (options) {
     // small algorithm to pause the request queue when the download queue is too big
     var that = this;
     setInterval(function monitor() {
-      if (that.queues.download.length() > 1000 && !that.queues.request.paused) {
+      //
+      Object.keys(that.queues).forEach(function (queueName) {
+        debug('queue '+queueName+' size = ' + that.queues[queueName].length());
+      });
+      if (that.queues.download.length() > 5000 && !that.queues.request.paused) {
         debug('monitoring: pausing request queue');
         that.queues.request.pause();
       }
-      if (that.queues.download.length() < 100 && that.queues.request.paused) {
+      if (that.queues.download.length() < 400 && that.queues.request.paused) {
         debug('monitoring: resuming request queue');
         that.queues.request.resume();
       }
     }, 1000);
   }
   if (!options.nocolorthief) {
-    this.queue.colorthief = queueColorThief(this, options);
+    this.queues.colorthief = queueColorThief(this, options);
   };
 };
 //

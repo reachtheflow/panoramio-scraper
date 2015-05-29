@@ -17,42 +17,52 @@ var unqueueColorthief = function (scraper, download, callback) {
 
   debug(download.photoId + ' unqueue');
 
-  Q.nfcall(request, 'http://127.0.0.1:8000/?photoId='+download.photoId)
-    .then(function (data) {
-      var response = data[0]
-        , body = data[1];
-
-      if (response.statusCode !== 200) {
-        throw download.photoId+" wrong status code";
-      }
-      var info = JSON.parse(body);
-      if (!Array.isArray(info) || info.length !== 3) {
-        throw download.photoId+" wrong format "+body;
-      }
-      // on va enregistrer dans mongo cette info !
-      debug(download.photoId + ' saving '+body+' in mongo');
-      //
-      return mongo.models.Photo.findByIdAndUpdate(
-        download.photoId,
-        {
-          dominantColor: {
-            r: info[0],
-            g: info[1],
-            b: info[2]
-          }
-        }
-      ).exec();
-    })
-    .then(
-      function success() {
-        debug(download.photoId + ' saved in mongo');
+  mongo.models.Photo.findById(download.photoId)
+    .exec()
+    .then(function (photo) {
+      debug(download.photoId+" photo loaded from mongo");
+      var dominantColor = photo.getDominantColor();
+      if (dominantColor) {
+        debug(download.photoId + ' already has a dominant color ' + JSON.stringify(dominantColor));
         callback();
-      },
-      function error(err) {
-        debug(download.photoId + ' error ' + err);
-        callback(err);
+      } else {
+        var url = 'http://127.0.0.1:8000/?photoId='+download.photoId;
+        debug(download.photoId+" requesting " + url);
+        Q.nfcall(request, url)
+          .then(function (data) {
+            var response = data[0]
+              , body = data[1];
+
+            debug(download.photoId+" response " + body);
+
+            if (response.statusCode !== 200) {
+              throw download.photoId+" wrong status code";
+            }
+            var info = JSON.parse(body);
+            if (!Array.isArray(info) || info.length !== 3) {
+              throw download.photoId+" wrong format "+body;
+            }
+            // on va enregistrer dans mongo cette info !
+            debug(download.photoId + ' saving '+body+' in mongo');
+            //
+            photo.setDominantColor(info[0], info[1], info[2]);
+            return photo.save()
+          })
+          .then(
+          function success() {
+            debug(download.photoId + ' saved in mongo (' + JSON.stringify(photo.getDominantColor()) + ')');
+            callback();
+          },
+          function error(err) {
+            debug(download.photoId + ' error ' + err);
+            callback(err);
+          }
+        );
       }
-    );
+    }).then(function () { }, function () {
+      debug(download.photoId + ' error ' + err);
+      callback(err);
+    });
 };
 
 module.exports = function (scraper, options) {

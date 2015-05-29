@@ -16,25 +16,33 @@ var unqueueDownloadWorker = function (scraper, photoId, callback) {
   assert(photoId);
 
   debug(photoId + ' unqueue');
-  var download = new DownloadPhoto({
-    photoId:photoId,
-    baseDirectory:conf['photos.baseDirectory']
-  });
-  download.isAlreadyDownloaded()
-    .then(function (downloaded) {
-      if (!downloaded) {
-        debug(photoId + ' has not been downloaded yet => download');
-        // FIXME: delay parametrable
-        return download.start().then(function () { return Q.delay(100); });
-      } else {
-        debug(photoId + ' has already been downloaded');
-      }
-    })
-    .then(function () {
-      scraper.emit('queue.download', download);
-    })
-    .then(function success() { callback(); },
-          function error(err) { callback(err); });
+  try {
+    var download = new DownloadPhoto({
+      photoId: photoId,
+      baseDirectory: conf['photos.baseDirectory']
+    });
+    download.isAlreadyDownloaded()
+      .then(function (downloaded) {
+        if (!downloaded) {
+          debug(photoId + ' has not been downloaded yet => download');
+          // FIXME: delay parametrable
+          return download.start();// .then(function () { return Q.delay(50); });
+        } else {
+          debug(photoId + ' has already been downloaded');
+        }
+      })
+      .then(function () {
+        scraper.emit('queue.download', download);
+      })
+      .then(function success() { callback(); },
+            function error(err) {
+              debug(photoId + ' download error ' + err);
+              callback(err);
+            });
+  } catch (e) {
+    debug('ERROR: photoId not a string ? ' + e);
+    return callback(e);
+  }
 };
 
 module.exports = function (scraper, options) {
